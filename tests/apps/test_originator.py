@@ -49,7 +49,7 @@ def get_orig(request, fsip):
 def test_dtmf_passthrough(get_orig):
     '''Test the dtmf app in coordination with the originator
     '''
-    orig = get_orig('doggy', offer=1)
+    orig = get_orig('doggy', offer=1, debug=True)
     orig.load_app(dtmf.DtmfChecker)
     orig.duration = 0
     orig.start()
@@ -84,7 +84,7 @@ def test_convo_sim(get_orig):
     playrec = orig.pool.nodes[0].client.apps.PlayRec['PlayRec']
 
     # verify dynamic load settings modify playrec settings
-    orig.rate = 10
+    orig.rate = 30
     orig.limit = orig.max_offered = 100
     assert playrec.rec_rate == orig.rate * playrec.rec_period
     assert playrec.iterations * playrec.clip_length + playrec.tail == orig.duration

@@ -109,6 +109,8 @@ def proxy_dp(ael, client):
     else:
         client.connect()
         client.listener = ael
+        # assigning a listener overrides it's call lookup var so restore it
+        client.listener.call_id_var = 'variable_call_uuid'
         # insert the `CallTimes` app
         assert 'default' == client.load_app(CallTimes, on_value="default")
         app = client.apps.default['CallTimes']
