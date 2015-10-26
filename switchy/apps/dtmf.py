@@ -20,18 +20,22 @@ class DtmfChecker(object):
     '''
     def prepost(self):
         self.log = get_logger(self.__class__.__name__)
-        self.sequence = list(map(str, range(0, 10))) + ['*#ABCD']
+        self.sequence = list(map(str, range(1, 10))) + '0 * # A B C D'.split()
         self.duration = 200  # ms
         self.total_time = len(self.sequence) * self.duration / 1000.0
         self.incomplete = OrderedDict()
         self.failed = []
 
+    @event_callback('CHANNEL_CREATE')
+    def on_create(self, sess):
+        if sess.is_outbound():
+            self.incomplete[sess.call] = list(reversed(self.sequence))
+            sess.vars['dtmf_checked'] = False
+
     @event_callback('CHANNEL_PARK')
     def on_park(self, sess):
         if sess.is_inbound():
             sess.answer()
-            self.incomplete[sess] = deque(self.sequence)
-            sess.vars['dtmf_checked'] = False
 
     @event_callback('CHANNEL_ANSWER')
     def on_answer(self, sess):
@@ -56,14 +60,22 @@ class DtmfChecker(object):
                 format(digit, sess.uuid)
             )
             # verify expected digit
-            remaining = self.incomplete[sess]
-            expected = remaining.popleft()
+            remaining = self.incomplete[sess.call]
+            try:
+                expected = remaining.pop()
+            except IndexError:
+                self.log.err("Received unexpected extra digit '{}' for"
+                             " session '{}'".format(expected, digit))
+                if sess not in self.failed:
+                    # rx an extra digit that wasn't expected
+                    self.failed.append(sess)
+
             if expected != digit:
-                self.log.warn("Expected digit '{}', instead received '{}' for"
-                              " session '{}'".format(expected, digit))
+                self.log.err("Expected digit '{}', instead received '{}' for"
+                             " session '{}'".format(expected, digit))
                 self.failed.append(sess)
             if not remaining:  # all digits have now arrived
                 self.log.debug("session '{}' completed dtmf sequence match"
                                .format(sess.uuid))
-                self.incomplete.pop(sess)  # sequence match success
+                self.incomplete.pop(sess.call)  # sequence match success
                 sess.vars['dtmf_checked'] = True
