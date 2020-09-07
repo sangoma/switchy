@@ -28,7 +28,7 @@ def test_toneplay(fsip):
 
 
 def test_playrec(fsip):
-    '''Test the synchronous caller with a simulated conversation using the the
+    '''Test the synchronous caller with a simulated conversation using the
     `PlayRec` app. Currently this test does no audio checking but merely
     verifies the callback chain is invoked as expected.
     '''
