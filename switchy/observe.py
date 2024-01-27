@@ -892,6 +892,9 @@ class EventListener(object):
         # hangups are always consumed
         return True, sess, job
 
+    def get_thread(self):
+        return self._thread
+
 
 class Client(object):
     '''Interface for synchronous server control using the esl "inbound method"
